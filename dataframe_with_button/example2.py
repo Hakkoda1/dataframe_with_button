@@ -1,16 +1,3 @@
-# Dataframe with button
-
-Streamlit component that allows you to display Dataframe with a button
-
-## Installation instructions
-
-```sh
-pip install dataframe_with_button
-```
-
-## Usage instructions
-
-```python
 import streamlit as st
 import pandas as pd
 from dataframe_with_button import custom_dataframe
@@ -24,4 +11,3 @@ df = pd.DataFrame({
 # Invoke custom component
 result = custom_dataframe(df, clickable_column="BATCH_ID")
 st.write(f'Button {result} was clicked')
-```
