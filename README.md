@@ -25,3 +25,4 @@ df = pd.DataFrame({
 result = custom_dataframe(df, clickable_column="BATCH_ID")
 st.write(f'Button {result} was clicked')
 ```
+![image](https://github.com/user-attachments/assets/b4311c8d-0a00-4983-ac81-51edc971c9e6)
