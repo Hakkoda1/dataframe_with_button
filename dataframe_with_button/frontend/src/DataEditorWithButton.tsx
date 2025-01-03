@@ -2,7 +2,7 @@ import {
   Streamlit,
   withStreamlitConnection,
   ComponentProps,
-} from "streamlit-component-lib"
+} from "streamlit-component-lib";
 import {
   Table,
   TableBody,
@@ -15,85 +15,195 @@ import {
   Button,
 } from "@mui/material";
 
-import React, { useCallback, useEffect, useMemo, useState, ReactElement } from "react"
+import React, { useEffect, useMemo, useState } from "react";
 
-
-function TableComponent({ args, disabled, theme }: ComponentProps): ReactElement {
+function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactElement {
+  const editable: boolean = !!args["editable"];
   const [data_json, setDataJson] = useState(JSON.parse(args["data_json"]));
-  const [isFocused, setIsFocused] = useState(false);
-  const clickable = args["clickable_column"]
-  const [clickedButton, setClickedButton] = useState(null)
-  const style = useMemo(() => {
-    if (!theme) return {};
-    const borderStyling = `1px solid ${isFocused ? theme.primaryColor : "gray"}`;
-    return { border: borderStyling, outline: borderStyling };
-  }, [theme, isFocused]);
-    Streamlit.setComponentValue('')
-  // const handleEdit = (id:any, field:any, value:any) => {
-  //   setDataJson((prevData:any) =>
-  //     prevData.map((row:any) =>
-  //       row.ID === id ? { ...row, [field]: value } : row
-  //     )
-  //   );
-  // };
-
-  const onButtonClick = (value:any): void => {
-    Streamlit.setComponentValue(value)
-  }
-  useEffect(() => {
-    Streamlit.setFrameHeight();
-  }, [style, theme]);
+  const clickable = args["clickable_column"];
+  const [clickedButton, setClickedButton] = useState(null);
+  const categoricalInfo = args["categorical_info"] || {};
 
   const tableContainerStyle = {
-    border: `2px solid ${theme?.primaryColor || "black"}`, // Custom border for the table
-    borderRadius: "8px", // Optional rounded corners
+    border: `2px solid ${theme?.primaryColor || "black"}`,
+    borderRadius: "8px",
   };
 
+  useEffect(() => {
+    Streamlit.setFrameHeight();
+  }, [data_json]);
 
+  const handleEdit = (uniqueId: any, field: string, value: string): void => {
+    const originalRow = data_json.find((row: any) => row[clickable] === uniqueId);
+    if (!originalRow) return;
 
+    const originalValue = originalRow[field];
+    let parsedValue: string | number | boolean;
+  
+    // Parse value based on original type
+    if (typeof originalValue === "number") {
+      parsedValue = parseFloat(value);
+    } else if (typeof originalValue === "boolean") {
+      parsedValue = value === "true"; // Convert string "true"/"false" back to boolean
+    } else {
+      parsedValue = value; // Assume string for all other cases
+    }
+    
+    originalRow[field] = parsedValue
+    setDataJson((prev: any) =>
+      prev.map((row: any) =>
+        row[clickable] === uniqueId ? originalRow : row
+      )
+    );
+    if (typeof originalValue == "boolean" || categoricalInfo[field]){
+      Streamlit.setComponentValue({ data: data_json, button: null });
+    }
+  };
 
-  return (
-    <TableContainer component={Paper} style={tableContainerStyle}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            {/* Dynamically generate table headers based on keys */}
-            {Object.keys(data_json[0] || {}).map((key) =>
-              <TableCell key={key}>{key.toUpperCase()}</TableCell>
-            )}
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {data_json.map((row:any) => (
-            <TableRow key={row.ID}>
-              {Object.entries(row).map(([field, value]) => {
-                if (field == clickable) return ( 
-                <TableCell key = {field}>
-                  <Button onClick={(e) => {onButtonClick(value)}}>{value}</Button>
-                </TableCell>
-                );
-                else return (
-                  <TableCell key={field}>
-                    <TextField
-                      value={value}
-                      variant="outlined"
-                      size="small"
-                      disabled={true}
-                    />
-                  </TableCell>
-                );
-              })}
+  const handleKeyPress = (e: React.KeyboardEvent, rowIndex: number, field: string): void => {
+    if (e.key === "Enter") {
+      Streamlit.setComponentValue({ data: data_json, button: null });
+    }
+  };
+
+  const onButtonClick = (value: any): void => {
+    setClickedButton(value);
+
+    // Return current state of data and clicked button
+    Streamlit.setComponentValue({ data: data_json, button: value });
+  };
+
+  // if not editable
+  if (editable){
+    return (
+      <TableContainer component={Paper} style={tableContainerStyle}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              {Object.keys(data_json[0] || {}).map((key) => (
+                <TableCell key={key}>{key.toUpperCase()}</TableCell>
+              ))}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
-  );
+          </TableHead>
+          <TableBody>
+            {data_json.map((row: any) => (
+              <TableRow key={row[clickable]}>
+                {Object.entries(row).map(([field, value]) => {
+                  if (field === clickable) {
+                    return (
+                      <TableCell key={field}>
+                        <Button onClick={() => onButtonClick(value)}>{value}</Button>
+                      </TableCell>
+                    );
+                  } else if (categoricalInfo[field]){
+                    return (
+                      <TableCell key={field}>
+                        <TextField
+                          select
+                          value={value}
+                          variant="outlined"
+                          size="small"
+                          onChange={(e) =>
+                            handleEdit(row[clickable], field, e.target.value)
+                          }
+                          SelectProps={{
+                            native: true,
+                          }}
+                        >
+                          {categoricalInfo[field].map((option: string) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </TextField>
+                      </TableCell>
+                    );
+  
+                  } else {
+                    return (
+                      <TableCell key={field}>
+                        {
+                          typeof value === "boolean" ? (
+                            <TextField
+                              select
+                              value={(value as string | number | boolean).toString()}
+                              variant="outlined"
+                              size="small"
+                              onChange={(e) =>
+                                handleEdit(row[clickable], field, e.target.value)
+                              }
+                              SelectProps={{
+                                native: true,
+                              }}
+                            >
+                              <option value="true">True</option>
+                              <option value="false">False</option>
+                            </TextField>
+                          ) : (
+                            <TextField
+                              value={value}
+                              variant="outlined"
+                              size="small"
+                              type={typeof value === "number" ? "number" : "text"}
+                              onChange={(e) => handleEdit(row[clickable], field, e.target.value)}
+                              onKeyDown={(e) => handleKeyPress(e, row[clickable], field)}
+                              onWheel={event => {event.preventDefault()}}
+                            />
+                          )
+                        }
+                      </TableCell>
+                    );
+                  }
+                })}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+  
+  } else{
+    return (
+      <TableContainer component={Paper} style={tableContainerStyle}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              {Object.keys(data_json[0] || {}).map((key) => (
+                <TableCell key={key}>{key.toUpperCase()}</TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {data_json.map((row: any) => (
+              <TableRow key={row[clickable]}>
+                {Object.entries(row).map(([field, value]) => {
+                  if (field === clickable) {
+                    return (
+                      <TableCell key={field}>
+                        <Button onClick={() => onButtonClick(value)}>{value}</Button>
+                      </TableCell>
+                    );
+                  } else {
+                    return (
+                      <TableCell key={field}>
+                          <TextField
+                          value={(value as string | number | boolean).toString()}
+                          variant="outlined"
+                            size="small"
+                            disabled
+                          />
+                      </TableCell>
+                    );
+                  }
+                })}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+  
+  }
 }
 
-// "withStreamlitConnection" is a wrapper function. It bootstraps the
-// connection between your component and the Streamlit app, and handles
-// passing arguments from Python -> Component.
-//
-// You don't need to edit withStreamlitConnection (but you're welcome to!).
-export default withStreamlitConnection(TableComponent)
+export default withStreamlitConnection(TableComponent);

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import streamlit.components.v1 as components
 
@@ -9,7 +10,7 @@ import pandas as pd
 if not _RELEASE:
     _component_func = components.declare_component(
         "dataframe_with_button",
-        url="http://localhost:3001",
+        url="http://localhost:3000",
     )
 else:
     parent_dir = os.path.dirname(os.path.abspath(__file__))
@@ -17,13 +18,13 @@ else:
     _component_func = components.declare_component("dataframe_with_button", path=build_dir)
 
 
-def custom_dataframe(
+def static_dataframe(
     data: pd.DataFrame,
     clickable_column: str,
     key=None,
 ):
     """
-    Custom Data Editor with clickable column functionality.
+    Custom Data Frame with clickable column functionality.
 
     Parameters
     ----------
@@ -37,7 +38,7 @@ def custom_dataframe(
     Returns
     -------
     dict
-        Edited DataFrame and the last clicked value.
+        Returns the button clicked.
     """
     if clickable_column not in data.columns:
         raise ValueError(f"Column '{clickable_column}' does not exist in the DataFrame.")
@@ -51,3 +52,34 @@ def custom_dataframe(
         data_json=data_json, clickable_column=clickable_column, key=key
     )
     return result
+
+def editable_dataframe(
+    data: pd.DataFrame,
+    clickable_column: str,
+    key=None,
+):
+    if clickable_column not in data.columns:
+        raise ValueError(f"Column '{clickable_column}' does not exist in the DataFrame.")
+
+    if not data[clickable_column].is_unique:
+        raise ValueError(f"Column '{clickable_column}' doesn't contain unique values.")
+
+    # Extract categorical columns and their categories
+    categorical_info = {
+        col: data[col].cat.categories.tolist()
+        for col in data.select_dtypes(include=["category"]).columns
+    }
+
+    data_json = data.to_json(orient="records")
+
+    result = _component_func(
+        data_json=data_json,
+        clickable_column=clickable_column,
+        categorical_info=categorical_info,
+        key=key,
+        editable=True,
+    )
+    if result is not None:
+        return result["data"], result["button"]
+    else:
+        return json.loads(data_json), None
