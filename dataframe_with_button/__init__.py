@@ -51,7 +51,10 @@ def static_dataframe(
     result = _component_func(
         data_json=data_json, clickable_column=clickable_column, key=key
     )
-    return result
+    if result is not None:
+        return result["button"]
+    else:
+        return None
 
 def editable_dataframe(
     data: pd.DataFrame,
