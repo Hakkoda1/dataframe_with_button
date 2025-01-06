@@ -76,6 +76,7 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
   // if not editable
   if (editable){
     return (
+      <div style={{ maxHeight: "500px", overflowY: "auto", overflowX: "auto",borderRadius: "8px"}}>
       <TableContainer component={Paper} style={tableContainerStyle}>
         <Table>
           <TableHead>
@@ -160,10 +161,12 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
           </TableBody>
         </Table>
       </TableContainer>
+      </div>
     );
   
   } else{
     return (
+      <div style={{ maxHeight: "500px", overflowY: "auto", overflowX: "auto",borderRadius: "8px"}}>
       <TableContainer component={Paper} style={tableContainerStyle}>
         <Table>
           <TableHead>
@@ -201,6 +204,7 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
           </TableBody>
         </Table>
       </TableContainer>
+      </div>
     );
   
   }
