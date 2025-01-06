@@ -28,4 +28,5 @@ df["EMAIL"] = pd.Categorical(df["EMAIL"], categories=["abc@gmail.com", "cde@k.co
 result = static_dataframe(df, clickable_column="BATCH_ID")
 result2 = editable_dataframe(df, clickable_column="BATCH_ID")
 ```
-![img.png](img.png)
+<img width="790" alt="Screenshot 2025-01-03 at 10 35 48 PM" src="https://github.com/user-attachments/assets/6581bf69-04f7-4f39-aaed-412d11417cf5" />
+
