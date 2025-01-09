@@ -25,10 +25,32 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
   const categoricalInfo = args["categorical_info"] || {};
 
   const tableContainerStyle = {
-    border: `2px solid ${theme?.primaryColor || "black"}`,
-    borderRadius: "8px",
-  };
-
+    maxHeight: '400px', // Scrollable height for table
+    margin: '0px 0',  // Add spacing above and below
+    padding: '0px',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+    borderRadius: '8px',
+    backgroundColor: 'white', // Light background
+    border: `2px solid rgba(0, 0, 0, 0.1)`,
+    };
+    const tableHeadStyle = {
+      backgroundColor: '#f3f4f6', // Light gray for the header
+      textTransform: 'uppercase',
+      borderRight: '1px solid #ddd', // Vertical border
+      fontFamily: "'Source Sans Pro', sans-serif", // Apply Source Sans Pro
+      fontSize: '14px', // Adjust font size for readability    
+      color: 'gray'
+    };
+    const tableRowHoverStyle = {
+      '&:hover': {
+        backgroundColor: '#e5e7eb', // Highlight on hover
+      },
+    };
+    const tableCellStyle = {
+      borderRight: '1px solid #ddd', // Vertical border
+    };
+    
+ 
   useEffect(() => {
     Streamlit.setFrameHeight();
   }, [data_json]);
@@ -66,6 +88,8 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
     }
   };
 
+ 
+  
   const onButtonClick = (value: any): void => {
     setClickedButton(value);
 
@@ -76,29 +100,32 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
   // if not editable
   if (editable){
     return (
-      <div style={{ maxHeight: "500px", overflowY: "auto", overflowX: "auto",borderRadius: "8px"}}>
       <TableContainer component={Paper} style={tableContainerStyle}>
-        <Table>
+        <Table stickyHeader>
           <TableHead>
             <TableRow>
               {Object.keys(data_json[0] || {}).map((key) => (
-                <TableCell key={key}>{key.toUpperCase()}</TableCell>
+                <TableCell key={key} sx={tableHeadStyle}>{key.toUpperCase()}</TableCell>
               ))}
             </TableRow>
           </TableHead>
           <TableBody>
             {data_json.map((row: any) => (
-              <TableRow key={row[clickable]}>
+              <TableRow key={row[clickable]} sx={tableRowHoverStyle}>
                 {Object.entries(row).map(([field, value]) => {
                   if (field === clickable) {
                     return (
-                      <TableCell key={field}>
-                        <Button onClick={() => onButtonClick(value)}>{value}</Button>
+                      <TableCell key={field} sx={tableCellStyle}>
+                        <Button 
+                        onClick={() => onButtonClick(value)}
+                        style={{
+                          backgroundColor: value === clickedButton ? '#c7d0fc' : 'white',
+                        }}>{value}</Button>
                       </TableCell>
                     );
                   } else if (categoricalInfo[field]){
                     return (
-                      <TableCell key={field}>
+                      <TableCell key={field} sx={tableCellStyle}>
                         <TextField
                           select
                           value={value}
@@ -122,7 +149,7 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
   
                   } else {
                     return (
-                      <TableCell key={field}>
+                      <TableCell key={field} sx={tableCellStyle}>
                         {
                           typeof value === "boolean" ? (
                             <TextField
@@ -161,18 +188,16 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
           </TableBody>
         </Table>
       </TableContainer>
-      </div>
     );
   
   } else{
     return (
-      <div style={{ maxHeight: "500px", overflowY: "auto", overflowX: "auto",borderRadius: "8px"}}>
       <TableContainer component={Paper} style={tableContainerStyle}>
-        <Table>
+        <Table stickyHeader>
           <TableHead>
             <TableRow>
               {Object.keys(data_json[0] || {}).map((key) => (
-                <TableCell key={key}>{key.toUpperCase()}</TableCell>
+                <TableCell key={key} sx={tableHeadStyle}>{key.toUpperCase()}</TableCell>
               ))}
             </TableRow>
           </TableHead>
@@ -182,13 +207,15 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
                 {Object.entries(row).map(([field, value]) => {
                   if (field === clickable) {
                     return (
-                      <TableCell key={field}>
-                        <Button onClick={() => onButtonClick(value)}>{value}</Button>
+                      <TableCell key={field} sx={tableCellStyle}>
+                        <Button onClick={() => onButtonClick(value)} style={{
+                          backgroundColor: value === clickedButton ? '#c7d0fc' : 'white',
+                        }}>{value}</Button>
                       </TableCell>
                     );
                   } else {
                     return (
-                      <TableCell key={field}>
+                      <TableCell key={field} sx={tableCellStyle}>
                           <TextField
                           value={(value as string | number | boolean).toString()}
                           variant="outlined"
@@ -204,7 +231,6 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
           </TableBody>
         </Table>
       </TableContainer>
-      </div>
     );
   
   }
