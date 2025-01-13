@@ -37,7 +37,8 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
       padding: '4px',
       borderRight: '1px solid #ddd',
       fontSize: '12px',
-      color: 'gray'
+      color: 'gray',
+      textAlign: 'center'
     };
     const tableRowHoverStyle = {
       '&:hover': {
@@ -59,7 +60,6 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
       },
       '& .MuiInputBase-input': {
         textAlign: 'inherit', // Matches table cell text alignment
-        fontSize: 'inherit', // Matches table cell font size
       },
     };
     const checkboxStyle = {
@@ -148,12 +148,11 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
                   } else if (categoricalInfo[field]){
                     return (
                       <TableCell key={field} sx={tableCellStyle}>
-                        <TextField sx = {textFieldStyle}
+                        <TextField sx = {{...textFieldStyle, textAlign: 'center', margin: '0px' }}
                           select
                           value={value}
                           variant="outlined"
                           size="small"
-                          style={{border:'None'}}
                           onChange={(e) =>
                             handleEdit(row[clickable], field, e.target.value)
                           }
@@ -172,26 +171,52 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
                   } else {
                     return (
                       <TableCell key={field} sx={tableCellStyle}>
-                        {
-                          typeof value === "boolean" ? (
+                      {(() => {
+                        if (typeof value === 'boolean') {
+                          return (
                             <Checkbox
-                              checked={value as boolean}
+                              checked={value}
                               onChange={(e) => handleCheckboxChange(row[clickable], field, e.target.checked)}
-                              style={checkboxStyle}
+                              size="small"
+                              sx={checkboxStyle}
                             />
-                          ) : (
-                            <TextField sx = {textFieldStyle}
+                          );
+                        }
+
+                        if (typeof value === 'string') {
+                          return (
+                            <TextField
                               value={value}
                               variant="outlined"
                               size="small"
-                              type={typeof value === "number" ? "number" : "text"}
+                              sx={textFieldStyle}
                               onChange={(e) => handleEdit(row[clickable], field, e.target.value)}
                               onKeyDown={(e) => handleKeyPress(e, row[clickable], field)}
                               onWheel={event => {event.preventDefault()}}
+
                             />
-                          )
+                          );
                         }
-                      </TableCell>
+                        if (typeof value === 'number') {
+                          return (
+                            <TextField
+                            value={value}
+                            variant="outlined"
+                            size="small"
+                            onChange={(e) => handleEdit(row[clickable], field, e.target.value)}
+                            onKeyDown={(e) => handleKeyPress(e, row[clickable], field)}
+                            onWheel={event => {event.preventDefault()}}
+                            sx={{ ...textFieldStyle, textAlign: 'right', margin: '0px' }}
+                            >
+                              {value}
+                            </TextField>
+                          );
+                        }
+
+                        return null; // Default case (optional)
+                      })()}
+                  </TableCell>
+
                     );
                   }
                 })}
@@ -214,7 +239,7 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
           </TableHead>
           <TableBody>
             {data_json.map((row: any) => (
-              <TableRow key={row[clickable]}>
+              <TableRow key={row[clickable]} sx={tableRowHoverStyle}>
                 {Object.entries(row).map(([field, value]) => {
                   if (field === clickable) {
                     return (
@@ -225,24 +250,46 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
                       </TableCell>
                     );
                   } else {
-                    return (
+                    return ( 
                         <TableCell key={field} sx={tableCellStyle}>
-                          {typeof value === 'boolean' ? (
-                            <Checkbox
-                              checked={value}
-                              disabled
-                              size="small"
-                              sx={checkboxStyle}
-                            />
-                          ) : (
-                            <TextField
-                              value={(value as string | number).toString()}
-                              variant="outlined"
-                              size="small"
-                              disabled
-                              sx={textFieldStyle}
-                            />
-                          )}
+                          {(() => {
+                            if (typeof value === 'boolean') {
+                              return (
+                                <Checkbox
+                                  checked={value}
+                                  disabled
+                                  size="small"
+                                  sx={checkboxStyle}
+                                />
+                              );
+                            }
+
+                            if (typeof value === 'string') {
+                              return (
+                                <TextField
+                                  value={value}
+                                  variant="outlined"
+                                  size="small"
+                                  disabled
+                                  sx={textFieldStyle}
+                                />
+                              );
+                            }
+                            if (typeof value === 'number') {
+                              return (
+                                <TextField
+                                value={value}
+                                variant="outlined"
+                                size="small"
+                                disabled
+                                sx={{ ...textFieldStyle, textAlign: 'right' }}
+                                >
+                                  {value}
+                                </TextField>
+                              );
+                            }
+                            return null;
+                          })()}
                       </TableCell>
                     );
                   }
