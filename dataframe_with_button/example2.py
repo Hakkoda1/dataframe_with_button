@@ -1,8 +1,10 @@
 import streamlit as st
 import pandas as pd
-from dataframe_with_button import static_dataframe
-from dataframe_with_button import editable_dataframe
+
 import json
+
+# from dataframe_with_button import editable_dataframe, static_dataframe
+from __init__ import editable_dataframe, static_dataframe
 df = pd.DataFrame({
     "BATCH_ID": ["item1", "item2", "item3"],
     "Name": ["Apple", "Banana", "Cherry"],
@@ -14,3 +16,6 @@ df = pd.DataFrame({
 df["EMAIL"] = pd.Categorical(df["EMAIL"], categories=["abc@gmail.com", "cde@k.com"])
 result = static_dataframe(df, clickable_column="BATCH_ID")
 result2 = editable_dataframe(df, clickable_column="BATCH_ID")
+
+st.dataframe(df)
+st.json(result2)

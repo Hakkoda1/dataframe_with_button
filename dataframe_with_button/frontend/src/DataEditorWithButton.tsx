@@ -13,17 +13,15 @@ import {
   Paper,
   TextField,
   Button,
+  Checkbox
 } from "@mui/material";
-
 import React, { useEffect, useMemo, useState } from "react";
-
 function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactElement {
   const editable: boolean = !!args["editable"];
   const [data_json, setDataJson] = useState(JSON.parse(args["data_json"]));
   const clickable = args["clickable_column"];
   const [clickedButton, setClickedButton] = useState(null);
   const categoricalInfo = args["categorical_info"] || {};
-
   const tableContainerStyle = {
     maxHeight: '400px', // Scrollable height for table
     margin: '0px 0',  // Add spacing above and below
@@ -34,34 +32,50 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
     border: `2px solid rgba(0, 0, 0, 0.1)`,
     };
     const tableHeadStyle = {
-      backgroundColor: '#f3f4f6', // Light gray for the header
+      backgroundColor: '#F3F4F6',
       textTransform: 'uppercase',
-      borderRight: '1px solid #ddd', // Vertical border
-      fontFamily: "'Source Sans Pro', sans-serif", // Apply Source Sans Pro
-      fontSize: '14px', // Adjust font size for readability    
+      padding: '4px',
+      borderRight: '1px solid #ddd',
+      fontSize: '12px',
       color: 'gray'
     };
     const tableRowHoverStyle = {
       '&:hover': {
-        backgroundColor: '#e5e7eb', // Highlight on hover
+        backgroundColor: '#E5E7EB', // Highlight on hover
       },
     };
     const tableCellStyle = {
       borderRight: '1px solid #ddd', // Vertical border
+      padding: '0px',
+      margin: '0px'
     };
-    
- 
+    const textFieldStyle = {
+      '& .MuiOutlinedInput-root': {
+        '& fieldset': {
+          border: 'none', // Removes the border
+        },
+        backgroundColor: 'transparent', // Ensures no background
+        padding: 0, // Removes extra padding
+      },
+      '& .MuiInputBase-input': {
+        textAlign: 'inherit', // Matches table cell text alignment
+        fontSize: 'inherit', // Matches table cell font size
+      },
+    };
+    const checkboxStyle = {
+      padding: '0px', // Removes extra padding
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+    };
   useEffect(() => {
     Streamlit.setFrameHeight();
   }, [data_json]);
-
   const handleEdit = (uniqueId: any, field: string, value: string): void => {
     const originalRow = data_json.find((row: any) => row[clickable] === uniqueId);
     if (!originalRow) return;
-
     const originalValue = originalRow[field];
     let parsedValue: string | number | boolean;
-  
     // Parse value based on original type
     if (typeof originalValue === "number") {
       parsedValue = parseFloat(value);
@@ -70,7 +84,6 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
     } else {
       parsedValue = value; // Assume string for all other cases
     }
-    
     originalRow[field] = parsedValue
     setDataJson((prev: any) =>
       prev.map((row: any) =>
@@ -82,21 +95,30 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
     }
   };
 
+  const handleCheckboxChange = (uniqueId: any, field: string, checked: boolean): void => {
+    const originalRow = data_json.find((row: any) => row[clickable] === uniqueId);
+    if (!originalRow) return;
+    // Directly use the boolean `checked` value since this is specifically for checkboxes
+    originalRow[field] = checked;
+    setDataJson((prev: any) =>
+      prev.map((row: any) =>
+        row[clickable] === uniqueId ? originalRow : row
+      )
+    );
+    // Assuming you want to call Streamlit.setComponentValue similarly to handleEdit
+    Streamlit.setComponentValue({ data: data_json, button: null });
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent, rowIndex: number, field: string): void => {
     if (e.key === "Enter") {
       Streamlit.setComponentValue({ data: data_json, button: null });
     }
   };
-
- 
-  
   const onButtonClick = (value: any): void => {
     setClickedButton(value);
-
     // Return current state of data and clicked button
     Streamlit.setComponentValue({ data: data_json, button: value });
   };
-
   // if not editable
   if (editable){
     return (
@@ -115,22 +137,23 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
                 {Object.entries(row).map(([field, value]) => {
                   if (field === clickable) {
                     return (
-                      <TableCell key={field} sx={tableCellStyle}>
-                        <Button 
+                      <TableCell key={field} sx={{...tableCellStyle}}>
+                        <Button
                         onClick={() => onButtonClick(value)}
                         style={{
-                          backgroundColor: value === clickedButton ? '#c7d0fc' : 'white',
+                          backgroundColor: value === clickedButton ? '#C7D0FC' : 'white',
                         }}>{value}</Button>
                       </TableCell>
                     );
                   } else if (categoricalInfo[field]){
                     return (
                       <TableCell key={field} sx={tableCellStyle}>
-                        <TextField
+                        <TextField sx = {textFieldStyle}
                           select
                           value={value}
                           variant="outlined"
                           size="small"
+                          style={{border:'None'}}
                           onChange={(e) =>
                             handleEdit(row[clickable], field, e.target.value)
                           }
@@ -146,29 +169,18 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
                         </TextField>
                       </TableCell>
                     );
-  
                   } else {
                     return (
                       <TableCell key={field} sx={tableCellStyle}>
                         {
                           typeof value === "boolean" ? (
-                            <TextField
-                              select
-                              value={(value as string | number | boolean).toString()}
-                              variant="outlined"
-                              size="small"
-                              onChange={(e) =>
-                                handleEdit(row[clickable], field, e.target.value)
-                              }
-                              SelectProps={{
-                                native: true,
-                              }}
-                            >
-                              <option value="true">True</option>
-                              <option value="false">False</option>
-                            </TextField>
+                            <Checkbox
+                              checked={value as boolean}
+                              onChange={(e) => handleCheckboxChange(row[clickable], field, e.target.checked)}
+                              style={checkboxStyle}
+                            />
                           ) : (
-                            <TextField
+                            <TextField sx = {textFieldStyle}
                               value={value}
                               variant="outlined"
                               size="small"
@@ -189,7 +201,6 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
         </Table>
       </TableContainer>
     );
-  
   } else{
     return (
       <TableContainer component={Paper} style={tableContainerStyle}>
@@ -209,19 +220,29 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
                     return (
                       <TableCell key={field} sx={tableCellStyle}>
                         <Button onClick={() => onButtonClick(value)} style={{
-                          backgroundColor: value === clickedButton ? '#c7d0fc' : 'white',
+                          backgroundColor: value === clickedButton ? '#C7D0FC' : 'white',
                         }}>{value}</Button>
                       </TableCell>
                     );
                   } else {
                     return (
-                      <TableCell key={field} sx={tableCellStyle}>
-                          <TextField
-                          value={(value as string | number | boolean).toString()}
-                          variant="outlined"
-                            size="small"
-                            disabled
-                          />
+                        <TableCell key={field} sx={tableCellStyle}>
+                          {typeof value === 'boolean' ? (
+                            <Checkbox
+                              checked={value}
+                              disabled
+                              size="small"
+                              sx={checkboxStyle}
+                            />
+                          ) : (
+                            <TextField
+                              value={(value as string | number).toString()}
+                              variant="outlined"
+                              size="small"
+                              disabled
+                              sx={textFieldStyle}
+                            />
+                          )}
                       </TableCell>
                     );
                   }
@@ -232,8 +253,6 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
         </Table>
       </TableContainer>
     );
-  
   }
 }
-
 export default withStreamlitConnection(TableComponent);
