@@ -13,8 +13,10 @@ import {
   Paper,
   TextField,
   Button,
-  Checkbox
+  Checkbox,
+  Chip
 } from "@mui/material";
+
 import React, { useEffect, useMemo, useState } from "react";
 function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactElement {
   const editable: boolean = !!args["editable"];
@@ -31,6 +33,9 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
     backgroundColor: 'white', // Light background
     border: `2px solid rgba(0, 0, 0, 0.1)`,
     };
+    const listStyle = {
+      padding: '0px'
+    }
     const tableHeadStyle = {
       backgroundColor: '#F3F4F6',
       textTransform: 'uppercase',
@@ -71,24 +76,25 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
   useEffect(() => {
     Streamlit.setFrameHeight();
   }, [data_json]);
-  const handleEdit = (uniqueId: any, field: string, value: string): void => {
+  const handleEdit = (uniqueId: any, field: string, value: any): void => {
     const originalRow = data_json.find((row: any) => row[clickable] === uniqueId);
     if (!originalRow) return;
     const originalValue = originalRow[field];
-    let parsedValue: string | number | boolean;
-    // Parse value based on original type
-    if (typeof originalValue === "number") {
+    let parsedValue: any;
+  
+    if (Array.isArray(originalValue)) {
+      parsedValue = value; // Already updated as an array
+    } else if (typeof originalValue === 'number') {
       parsedValue = parseFloat(value);
-    } else if (typeof originalValue === "boolean") {
-      parsedValue = value === "true"; // Convert string "true"/"false" back to boolean
+    } else if (typeof originalValue === 'boolean') {
+      parsedValue = value === 'true';
     } else {
-      parsedValue = value; // Assume string for all other cases
+      parsedValue = value; // Default case (e.g., strings)
     }
-    originalRow[field] = parsedValue
+  
+    originalRow[field] = parsedValue;
     setDataJson((prev: any) =>
-      prev.map((row: any) =>
-        row[clickable] === uniqueId ? originalRow : row
-      )
+      prev.map((row: any) => (row[clickable] === uniqueId ? originalRow : row))
     );
     if (typeof originalValue == "boolean" || categoricalInfo[field]){
       Streamlit.setComponentValue({ data: data_json, button: null });
@@ -108,6 +114,7 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
     // Assuming you want to call Streamlit.setComponentValue similarly to handleEdit
     Streamlit.setComponentValue({ data: data_json, button: null });
   };
+
 
   const handleKeyPress = (e: React.KeyboardEvent, rowIndex: number, field: string): void => {
     if (e.key === "Enter") {
@@ -213,7 +220,21 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
                           );
                         }
 
-                        return null; // Default case (optional)
+                        if (Array.isArray(value)) {
+                          return (
+                            <TextField
+                              value={value.join(', ')}
+                              variant="outlined"
+                              size="small"
+                              sx={listStyle}
+                              onChange={(e) =>
+                                handleEdit(row[clickable], field, e.target.value.split(', '))
+                              }
+                              onKeyDown={(e) => handleKeyPress(e, row[clickable], field)}
+                            />
+                          );
+                        }
+                                                        return null; // Default case (optional)
                       })()}
                   </TableCell>
 
@@ -250,7 +271,7 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
                       </TableCell>
                     );
                   } else {
-                    return ( 
+                    return (
                         <TableCell key={field} sx={tableCellStyle}>
                           {(() => {
                             if (typeof value === 'boolean') {
@@ -275,22 +296,32 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
                                 />
                               );
                             }
+                            
                             if (typeof value === 'number') {
                               return (
                                 <TextField
-                                value={value}
-                                variant="outlined"
-                                size="small"
-                                disabled
-                                sx={{ ...textFieldStyle, textAlign: 'right' }}
-                                >
-                                  {value}
-                                </TextField>
+                                  value={value}
+                                  variant="outlined"
+                                  size="small"
+                                  disabled
+                                  sx={{ ...textFieldStyle, textAlign: 'right' }}
+                                />
                               );
                             }
+
+                            if (Array.isArray(value)) {
+                              return (
+                                <div style={{display: 'flex', flexWrap: 'wrap'}}>
+                                  {value.map((v: any) => (
+                                    <Chip key={v} label={v} size="small" sx={{ margin: '2px', fontSize: '12px'}} />
+                                  ))}
+                                </div>
+                              );
+                            }
+
                             return null;
                           })()}
-                      </TableCell>
+                        </TableCell>
                     );
                   }
                 })}

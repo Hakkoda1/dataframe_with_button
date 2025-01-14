@@ -10,7 +10,8 @@ df = pd.DataFrame({
     "Name": ["AppleApple", "Banana", "Cherry"],
     "Price": [1.2, 0.8, 2.5],
     "IN_STOCK": [True, False, True],
-    "EMAIL": ["abc@gmail.com", "cde@k.com", "abc@gmail.com"]
+    "EMAIL": ["abc@gmail.com", "cde@k.com", "abc@gmail.com"],
+    "LIST": [["abc@gmail.com"], ["cde@k.com"], ["abc@gmail.com"]]
 })
 
 df["EMAIL"] = pd.Categorical(df["EMAIL"], categories=["abc@gmail.com", "cde@k.com"])
