@@ -18,61 +18,13 @@ import {
 } from "@mui/material";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { checkboxStyle, listStyle, tableCellStyle, tableContainerStyle, tableHeadStyle, tableRowHoverStyle, textFieldStyle } from "./styles";
 function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactElement {
   const editable: boolean = !!args["editable"];
   const [data_json, setDataJson] = useState(JSON.parse(args["data_json"]));
   const clickable = args["clickable_column"];
   const [clickedButton, setClickedButton] = useState(null);
   const categoricalInfo = args["categorical_info"] || {};
-  const tableContainerStyle = {
-    maxHeight: '400px', // Scrollable height for table
-    margin: '0px 0',  // Add spacing above and below
-    padding: '0px',
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-    borderRadius: '8px',
-    backgroundColor: 'white', // Light background
-    border: `2px solid rgba(0, 0, 0, 0.1)`,
-    };
-    const listStyle = {
-      padding: '0px'
-    }
-    const tableHeadStyle = {
-      backgroundColor: '#F3F4F6',
-      textTransform: 'uppercase',
-      padding: '4px',
-      borderRight: '1px solid #ddd',
-      fontSize: '12px',
-      color: 'gray',
-      textAlign: 'center'
-    };
-    const tableRowHoverStyle = {
-      '&:hover': {
-        backgroundColor: '#E5E7EB', // Highlight on hover
-      },
-    };
-    const tableCellStyle = {
-      borderRight: '1px solid #ddd', // Vertical border
-      padding: '0px',
-      margin: '0px'
-    };
-    const textFieldStyle = {
-      '& .MuiOutlinedInput-root': {
-        '& fieldset': {
-          border: 'none', // Removes the border
-        },
-        backgroundColor: 'transparent', // Ensures no background
-        padding: 0, // Removes extra padding
-      },
-      '& .MuiInputBase-input': {
-        textAlign: 'inherit', // Matches table cell text alignment
-      },
-    };
-    const checkboxStyle = {
-      padding: '0px', // Removes extra padding
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-    };
   useEffect(() => {
     Streamlit.setFrameHeight();
   }, [data_json]);
@@ -104,14 +56,12 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
   const handleCheckboxChange = (uniqueId: any, field: string, checked: boolean): void => {
     const originalRow = data_json.find((row: any) => row[clickable] === uniqueId);
     if (!originalRow) return;
-    // Directly use the boolean `checked` value since this is specifically for checkboxes
     originalRow[field] = checked;
     setDataJson((prev: any) =>
       prev.map((row: any) =>
         row[clickable] === uniqueId ? originalRow : row
       )
     );
-    // Assuming you want to call Streamlit.setComponentValue similarly to handleEdit
     Streamlit.setComponentValue({ data: data_json, button: null });
   };
 
@@ -123,10 +73,8 @@ function TableComponent({ args, disabled, theme }: ComponentProps): React.ReactE
   };
   const onButtonClick = (value: any): void => {
     setClickedButton(value);
-    // Return current state of data and clicked button
     Streamlit.setComponentValue({ data: data_json, button: value });
   };
-  // if not editable
   if (editable){
     return (
       <TableContainer component={Paper} style={tableContainerStyle}>
